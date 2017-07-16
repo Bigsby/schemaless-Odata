@@ -1,5 +1,26 @@
 ﻿{
   "name": "Item one",
   "value": 3,
-  "specific": "this is specific property"
+  "specific": "this is specific property",
+  "strings": [
+    "this is one string",
+    "this is another string"
+  ],
+  "integers": [
+    1,
+    2,
+    3
+  ],
+  "objects": [
+    {
+      "name": "item one"
+    },
+    {
+      "name": "item two"
+    }
+  ],
+  "innerItem": {
+    "name": "Inner item",
+    "innerProperty": 23
+  }
 }
