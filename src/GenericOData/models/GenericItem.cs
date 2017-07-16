@@ -8,20 +8,15 @@ namespace GenericOData.models
     {
         public string id { get; set; }
 
-        public JObject InnerObject { get; set; }
+        public IDictionary<string, object> DynamicProperties { get; set; }
 
-        public IDictionary<string, object> DynamicProperties
-        {
-            get
-            {
-                return ConvertDynamicProperties(id, InnerObject);
-            }
-        }
-
-        private static IDictionary<string, object> ConvertDynamicProperties(string id, JObject token)
+        internal static IDictionary<string, object> ConvertDynamicProperties(string id, JObject token)
         {
             var result = new Dictionary<string, object>();
-            foreach (var prop in token.Properties())
+            if (null == token)
+                return result;
+
+            foreach (var prop in token?.Properties())
             {
                 if (null == prop.Value) continue;
                 result[prop.Name] = ConvertValue(prop.Name, id, prop.Value);
@@ -103,10 +98,11 @@ namespace GenericOData.models
 
         private static GenericItem BuildItemFromToken(JToken token, string computedId)
         {
+            var id = token.Value<string>("id") ?? computedId;
             return new GenericItem
             {
-                id = token.Value<string>("id") ?? computedId,
-                InnerObject = (JObject)token
+                id = id,
+                DynamicProperties = GenericItem.ConvertDynamicProperties(id, (JObject)token)
             };
         }
 
