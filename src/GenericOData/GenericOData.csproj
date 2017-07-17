@@ -109,6 +109,7 @@
     <Content Include="packages.config" />
     <Content Include="App_Data\collection\one.json" />
     <Content Include="App_Data\collection\two.json" />
+    <None Include="Properties\PublishProfiles\test.bigsbyspot.org - Web Deploy.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -123,6 +124,7 @@
     <Compile Include="controlllers\DataController.cs" />
     <Compile Include="infrastructure\DataProvider.cs" />
     <Compile Include="infrastructure\DynamicPathHandler.cs" />
+    <Compile Include="infrastructure\MethodOverrideHandler.cs" />
     <Compile Include="models\GenericItem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
