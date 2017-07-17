@@ -109,6 +109,7 @@
     <Content Include="packages.config" />
     <Content Include="App_Data\collection\one.json" />
     <Content Include="App_Data\collection\two.json" />
+    <None Include="Properties\PublishProfiles\test.bigsbyspot.org - Web Deploy.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
