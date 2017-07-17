@@ -1,5 +1,5 @@
 # Generic Odata
-A schemaless OData controller
+A generic and schemaless OData controller
 
 Steps (all in Visual Studio):
 1. New Project - ASP.Net Web Application (.Net Framework)
@@ -39,11 +39,10 @@ Steps (all in Visual Studio):
         }
     }
     ```
+    - Removes the collection part of ODataPath so that the generic *data* Entity Set receives the reques.
 
-4. Add generic item model:
+4. Add generic model:
    ```csharp
-    using Newtonsoft.Json.Linq;
-    using System;
     using System.Collections.Generic;
 
     namespace GenericOData.models
@@ -52,20 +51,95 @@ Steps (all in Visual Studio):
         {
             public string id { get; set; }
 
-            public JObject InnerObject { get; set; }
+            public IDictionary<string, object> DynamicProperties { get; set; }
+        }
+    }
+   ```
+   - A simple model that, besides the mandatory id, holds dynamic properties for [OData Open Type](https://docs.microsoft.com/en-us/aspnet/web-api/overview/odata-support-in-aspnet-web-api/odata-v4/use-open-types-in-odata-v4)
 
-            public IDictionary<string, object> DynamicProperties
+5. Add data reader, in this case, reading data from *App_Data* folder:
+   ```csharp
+    using GenericOData.models;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Web.Hosting;
+
+    namespace GenericOData.infrastructure
+    {
+        internal static class DataProvider
+        {
+            public static IEnumerable<GenericItem> GetItems(string collection)
             {
-                get
+                var folderPath = HostingEnvironment.MapPath($"~/App_Data/{collection}");
+                if (!Directory.Exists(folderPath))
+                    yield break;
+
+                foreach (var filePath in Directory.GetFiles(folderPath))
+                    yield return ReadItem(filePath, Path.GetFileNameWithoutExtension(filePath));
+            }
+
+            public static GenericItem GetItem(string collection, string id)
+            {
+                var filePath = HostingEnvironment.MapPath($"~/App_Data/{collection}/{id}.json");
+                if (!File.Exists(filePath))
+                    return null;
+
+                return ReadItem(filePath, id);
+            }
+
+            public static DataResult SaveItem(string collection, GenericItem item)
+            {
+                try
                 {
-                    return ConvertDynamicProperties(id, InnerObject);
+                    var json = JsonConvert.SerializeObject(item.DynamicProperties);
+                    var filePath = HostingEnvironment.MapPath($"~/App_Data/{collection}/{item.id}.json");
+
+                    if (File.Exists(filePath))
+                        File.Delete(filePath);
+
+                    File.WriteAllText(filePath, json);
+                    return DataResult.Successul;
                 }
+                catch (Exception ex)
+                {
+                    return DataResult.Fail(ex);
+                }
+            }
+
+            public static DataResult DeleteItem(string collection, string id)
+            {
+                try
+                {
+                    var filePath = HostingEnvironment.MapPath($"~/App_Data/{collection}/{id}.json");
+                    File.Delete(filePath);
+                    return DataResult.Successul;
+                }
+                catch (Exception ex)
+                {
+                    return DataResult.Fail(ex);
+                }
+            }
+
+            private static GenericItem ReadItem(string filePath, string id)
+            {
+                var fileContent = File.ReadAllText(filePath);
+                return new GenericItem
+                {
+                    id = id,
+                    DynamicProperties = ConvertDynamicProperties(id, JObject.Parse(fileContent))
+                };
             }
 
             private static IDictionary<string, object> ConvertDynamicProperties(string id, JObject token)
             {
                 var result = new Dictionary<string, object>();
-                foreach (var prop in token.Properties())
+                if (null == token)
+                    return result;
+
+                foreach (var prop in token?.Properties())
                 {
                     if (null == prop.Value) continue;
                     result[prop.Name] = ConvertValue(prop.Name, id, prop.Value);
@@ -147,10 +221,11 @@ Steps (all in Visual Studio):
 
             private static GenericItem BuildItemFromToken(JToken token, string computedId)
             {
+                var id = token.Value<string>("id") ?? computedId;
                 return new GenericItem
                 {
-                    id = token.Value<string>("id") ?? computedId,
-                    InnerObject = (JObject)token
+                    id = id,
+                    DynamicProperties = ConvertDynamicProperties(id, (JObject)token)
                 };
             }
 
@@ -161,58 +236,34 @@ Steps (all in Visual Studio):
                     yield return BuildItemFromToken(item, $"{parentId}_{count++}");
             }
         }
-    }
-   ```
 
-5. Add data reader, in this case, reading data from *App_Data* folder:
-   ```csharp
-    using GenericOData.models;
-    using Newtonsoft.Json.Linq;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Web.Hosting;
-
-    namespace GenericOData.infrastructure
-    {
-        internal static class DataProvider
+        internal class DataResult
         {
-            public static IEnumerable<GenericItem> GetItems(string collection)
-            {
-                var folderPath = HostingEnvironment.MapPath($"~/App_Data/{collection}");
-                if (!Directory.Exists(folderPath))
-                    yield break;
+            public bool Success { get; private set; }
+            public Exception Error { get; private set; }
 
-                foreach (var filePath in Directory.GetFiles(folderPath))
-                    yield return ReadItem(filePath, Path.GetFileNameWithoutExtension(filePath));
-            }
+            public static DataResult Successul => new DataResult { Success = true };
 
-            public static GenericItem GetItem(string collection, string id)
-            {
-                var filePath = HostingEnvironment.MapPath($"~/App_Data/{collection}/{id}.json");
-                if (!File.Exists(filePath))
-                    return null;
+            public static DataResult Fail(Exception ex) => new DataResult { Error = ex };
 
-                return ReadItem(filePath, id);
-            }
+            public static implicit operator bool(DataResult result)
+            { return result.Success; }
 
-            private static GenericItem ReadItem(string filePath, string id)
-            {
-                var fileContent = File.ReadAllText(filePath);
-                return new GenericItem
-                {
-                    id = id,
-                    InnerObject = JObject.Parse(fileContent)
-                };
-            }
+            private DataResult() { }
         }
     }
    ```
+   - The *special* deserialization of dynamic properties is necessary because [JSON.NET](http://www.newtonsoft.com/json):
+     - Deserializes integers as *System.Int64* instead of *System.Int32*, which is what **OData** defaults to;
+     - Deserializes *arrays* to *JArray* which is unknown to **OData**;
+     - Deserializes *objects* to *JObject* which is unknown to **OData**.
 
 6. Add controller, with *Add > Class* instead of *Add > Controller*:
    ```csharp
     using GenericOData.infrastructure;
     using GenericOData.models;
     using System.Linq;
+    using System.Web.Http;
     using System.Web.OData;
 
     namespace GenericOData.controlllers
@@ -227,6 +278,24 @@ Steps (all in Visual Studio):
             public GenericItem Get([FromODataUri]string key)
             {
                 return DataProvider.GetItem(GetCollection(), key);
+            }
+
+            public IHttpActionResult Post(GenericItem item)
+            {
+                var collection = GetCollection();
+
+                var result = DataProvider.SaveItem(collection, item);
+                if (result)
+                    return Created($"data/{collection}('{item.id}')", item);
+                return InternalServerError(result.Error);
+            }
+
+            public IHttpActionResult Delete([FromODataUri]string key)
+            {
+                var result = DataProvider.DeleteItem(GetCollection(), key);
+                if (result)
+                    return Ok();
+                return InternalServerError(result.Error);
             }
 
             private string GetCollection()
@@ -259,6 +328,7 @@ Steps (all in Visual Studio):
             public void Configuration(IAppBuilder app)
             {
                 var config = new HttpConfiguration();
+                config.MessageHandlers.Add(new MethodOverrideHandler());
                 config.Routes.MapHttpRoute("api", "api/{controller}/{action}");
                 ConfigureOdata(config);
                 app.UseWebApi(config);
@@ -291,6 +361,7 @@ Steps (all in Visual Studio):
         }
     }
    ```
+   - *MethodOverrideHandler* is used because some hostings (like **GoDaddy**) do not accept *DELETE* HTTP method. Code was *stolen* from [this Scott Hanselman post.](https://www.hanselman.com/blog/HTTPPUTOrDELETENotAllowedUseXHTTPMethodOverrideForYourRESTServiceWithASPNETWebAPI.aspx).
 
 8. Run and test:
    1. Hit *F5*
