@@ -1,7 +1,5 @@
 ﻿using GenericOData.infrastructure;
 using GenericOData.models;
-using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
 using System.Linq;
 using System.Web.Http;
 using System.Web.OData;
@@ -20,15 +18,13 @@ namespace GenericOData.controlllers
             return DataProvider.GetItem(GetCollection(), key);
         }
 
-        public IHttpActionResult Post([FromBody]JToken item)
+        public IHttpActionResult Post(GenericItem item)
         {
-            var jItem = (JObject)item;
             var collection = GetCollection();
-            var id = item.Value<string>("id");
-            jItem.Remove("id");
-            var result = DataProvider.SaveItem(collection, id, jItem);
+
+            var result = DataProvider.SaveItem(collection, item);
             if (result)
-                return Created($"data/{collection}('{id}')", item);
+                return Created($"data/{collection}('{item.id}')", item);
             return InternalServerError(result.Error);
         }
 
