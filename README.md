@@ -1,5 +1,5 @@
-# Generic Odata
-A generic and schemaless OData controller
+# Generic OData
+A generic and schemaless OData Web API controller.
 
 Steps (all in Visual Studio):
 1. New Project - ASP.Net Web Application (.Net Framework)
