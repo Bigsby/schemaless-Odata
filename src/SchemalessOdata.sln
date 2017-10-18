@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.15
+VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenericOData", "GenericOData\GenericOData.csproj", "{326E2CAA-3C04-45C2-9C44-AA09863DE151}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bigs.AspNetCore.SchemalessOdata", "Bigs.AspNetCore.SchemalessOdata\Bigs.AspNetCore.SchemalessOdata.csproj", "{FFFD7D1D-F2F8-4AB7-9562-0DC843F64311}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,8 +17,15 @@ Global
 		{326E2CAA-3C04-45C2-9C44-AA09863DE151}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{326E2CAA-3C04-45C2-9C44-AA09863DE151}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{326E2CAA-3C04-45C2-9C44-AA09863DE151}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FFFD7D1D-F2F8-4AB7-9562-0DC843F64311}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFFD7D1D-F2F8-4AB7-9562-0DC843F64311}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFFD7D1D-F2F8-4AB7-9562-0DC843F64311}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFFD7D1D-F2F8-4AB7-9562-0DC843F64311}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E9465CFA-CE42-4953-B7B1-6BBBC236EA2D}
 	EndGlobalSection
 EndGlobal
